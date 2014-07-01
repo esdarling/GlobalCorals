@@ -1,0 +1,83 @@
+###visualizing our data as points over stress model and/or sst
+###raster layers are rnr stress model and sst long term mean
+##load rasters with tif extension
+##all data files in the project dropbox folder
+require(maptools)
+require(raster)
+require(rgeos)
+require(rgdal)
+library(latticeExtra)
+library(rasterVis)
+require(utils)
+
+setwd("/Users/josephmaina/Dropbox/GLOBAL CORAL PAPERS/sampledataforfigures")
+##load the raster layers  i.e. sst and stress model
+env.var<-list.files(pattern='tif')
+rnr<-raster(env.var[1])
+mean.sst<-raster(env.var[4])
+
+##coral sites csv file in dropbox
+coral.sites<-read.csv("/Users/josephmaina/Dropbox/GLOBAL CORAL PAPERS/Paper1/Analysis/coral_env.csv")
+
+##plot the raster and overlay the point using levelplot function
+
+raster.points<-levelplot(rnr, col.regions = (topo.colors(255)), cuts=254, margin=FALSE) + layer(panel.xyplot(x=coral.sites$Longitude, y=coral.sites$Latitude, aspect = "iso",pch=3, cex = 0.8, col="red"))
+
+raster.points
+
+###########
+####if you want to plot/sample a certain area , for example if we want to plot just for WIO, first crop your raster using crop and extent functions as follows
+#########
+##extent(r, xmin, xmax, ymin, ymax) these are lat-longs 
+
+wio.extent<-extent(26,74,-34,5)##define the extent
+
+wio.rnr<- crop(rnr, wio.extent)##crop the raster to extent above
+##plot and add points using code below or modify the line of code with levelplot function as above (more pretier)
+
+
+plot(wio.rnr, col=terrain.colors(12))##plot the cropped raster
+points(coral.sites$Longitude, coral.sites$Latitude, pch=1, col = "red", cex = .6)###add my points
+
+
+####################################################################
+####Alternatively if you want to only show the location of points with high res coastline and maybe bathymetry...
+#############################
+
+library(maps)
+library(mapdata)
+data(world2MapEnv)
+
+map('worldHires', col=8, fill = TRUE, boundary = FALSE, interior=FALSE)
+points(coral.sites$Longitude, coral.sites$Latitude, pch = 3, col = "red", cex = .6)
+
+
+###above is clipped and centered to pacific
+map("world2", xlim = c(100, 250))
+map.axes()
+coral.sites$Longitude_360<-ifelse(coral.sites$Longitude <0,
+	coral.sites$Longitude+360, coral.sites$Longitude )##converts points to pacific centered coordinates
+	
+points(coral.sites$Longitude_360, coral.sites$Latitude, pch = 1, col = "red", cex = .8)##add points
+
+########same as above but using geomapdata package
+library(GEOmap)
+library(geomapdata)
+data(coastmap)
+
+data(worldmap)
+plotGEOmap(worldmap)###
+coral.sites$Longitude_360<-ifelse(coral.sites$Longitude <0,
+	coral.sites$Longitude+360, coral.sites$Longitude )
+points(coral.sites$Longitude_360, coral.sites$Latitude, col = "red", cex = .6)
+
+#########same as above but using 'coastmap' data
+
+plotGEOmap(coastmap , border='black' )
+##title(xlab="Longitude", ylab="Latitude" )
+grid()
+box()
+coral.sites$Longitude_360<-ifelse(coral.sites$Longitude <0,
+	coral.sites$Longitude+360, coral.sites$Longitude )
+points(coral.sites$Longitude_360, coral.sites$Latitude, col = "red", cex = .6)
+
